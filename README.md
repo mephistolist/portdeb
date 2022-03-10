@@ -7,13 +7,13 @@ apt install dpkg-dev devscripts fakeroot -y
 
 Create the following dir and add permissions:
 
-mkdir /usr/portdeb
-chown -Rv _apt:root /usr/portdeb
+mkdir /usr/portdeb;
+chown -Rv _apt:root /usr/portdeb;
 chmod -Rv 700 /usr/portdeb
 
 Copy script to /usr/bin and add permissions:
 
-cp /path/to/script/portdeb /usr/bin
+cp /path/to/script/portdeb /usr/bin;
 chmod +x /usr/bin/portdeb
 
 Portdeb is a ports-like system for Debian.
