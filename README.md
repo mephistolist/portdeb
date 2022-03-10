@@ -4,9 +4,9 @@ Portdeb works with apt to ensure apt does not overwrite its changes.
 However, upgrading with apt will still be needed to ensure software not maintained by portdeb is up to date.  
 
 Install the following dependencies:
-
+```
 apt install dpkg-dev devscripts fakeroot -y
-
+```
 Create the following dir and add permissions:
 
 mkdir /usr/portdeb  
