@@ -6,18 +6,18 @@ git clone https://github.com/mephistolist/portdeb.git && cd portdeb
 ```
 Install the following dependencies:
 ```
-apt install dpkg-dev devscripts fakeroot -y
+sudo apt install dpkg-dev devscripts fakeroot -y
 ```
 Create the following dir and add permissions:
 ```
-mkdir /usr/portdeb  
-chown -Rv _apt:root /usr/portdeb  
-chmod -Rv 700 /usr/portdeb  
+sudo mkdir /usr/portdeb  
+sudo chown -Rv _apt:root /usr/portdeb  
+sudo chmod -Rv 700 /usr/portdeb  
 ```
 Copy script to /usr/bin and add permissions:
 ```
-cp /path/to/script/portdeb /usr/bin  
-chmod +x /usr/bin/portdeb
+sudo cp portdeb /usr/bin  
+sudo chmod +x /usr/bin/portdeb
 ```
 Usage:
 ```
