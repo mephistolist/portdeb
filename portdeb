@@ -1,0 +1,346 @@
+#!/bin/bash 
+
+# Get current dir and switch to /usr/portdeb
+CWD=$(echo $PWD)
+cd /usr/portdeb
+
+# Exit on error
+set -e
+
+# Return to original dir
+return(){
+  cd $CWD
+}
+
+help() {
+      echo -e "Portdeb is a ports-like system for Debian.\n"	    
+      echo -e "Usage:\n"
+      echo "portdeb -a program_name : Download, Build, Install, Lock and Clean (All)"
+      echo "portdeb -s program_name : Download source to /usr/portdeb"
+      echo "portdeb -b program_name : Build program in /usr/portdeb/program_name"
+      echo "portdeb -i program_name : Install a built program in /usr/portdeb/program_name"
+      echo "portdeb -l program_name : Lock the deb package to prevent upgrades"
+      echo "portdeb -d program_name : Delete source and unlock package"
+      echo "portdeb -r : Remove unneeded dependencies from builds."
+      echo -e "portdeb -c : Clean unecessary files from builds.\n"
+      exit
+}
+
+direxist(){
+  if [ -d "/usr/portdeb/$1" ]; then
+    echo -e "\nThe folder /usr/portdeb/$1 already exists.\nYou will need to rename, move or remove this file to proceed."
+    exit
+  fi
+}
+
+trap direxist return
+
+trim(){
+  # Rename folder to $1.
+  A=$(ls | egrep "^$1" | head -n 1); 
+  mv $A $1
+}
+
+trap trim return
+
+rootcheck(){
+  if [ "$EUID" -ne 0 ]
+    then echo "You are not root/sudo/doas. Come back when you are."
+    exit
+  fi
+
+}
+
+trap rootcheck return
+
+getsource(){
+  if apt source $1; then
+    break 2>/dev/null
+  else
+    echo -e "Try 'apt search $1'"
+    exit
+  fi
+
+  #Remove unneeded source
+  E=$(ls -l | awk "/$1/ && !/^d/ { print \$9 }")
+  if [[ ! -z $E ]] 
+  then
+    ls -l | awk "/$1/ && !/^d/ { print \$9 }" | xargs rm
+  fi 
+}
+
+trap getsource return 
+
+builddeps(){
+  # Enter folder, check for valid files and install dependencies
+  cd /usr/portdeb/$1
+  CONTROL="/usr/portdeb/$1/debian/control"
+  if [ -f "$CONTROL" ]; then
+    yes | mk-build-deps --install debian/control
+  else
+    echo -e "\nNecessary folders/files are missing to complete this build."
+    echo -e "Please try re-downloading the source and try again.\n"  
+    exit
+  fi
+}
+
+trap builddep return
+
+buildpkg(){
+  # Build deb package
+  dpkg-buildpackage -rfakeroot -b -uc -us && cd /usr/portdeb/  
+}
+
+trap buildpkg return
+
+instpkg(){
+  # Get the right deb
+  C=$(ls | awk "/$1/ && /\.deb$/" | egrep -v 'buildinfo$|changes$|dbgsym|data')
+
+  # Install deb package created.
+  if [ ! -z "$C" ]
+  then 
+     dpkg -i $PWD/$C
+  else
+     echo -e "\nNo package files for $1 were found to install.\n"
+     exit
+  fi
+}
+
+trap instpkg return 
+
+clean(){
+  #Clean up uneeded files:
+  find /usr/portdeb -regextype posix-egrep -regex ".*\.(deb|buildinfo|changes|dbgsym|o|pyc|class)$" -type f -delete
+  echo -e "\n$1 has now been cleaned."
+}
+
+trap clean return
+
+rdeps(){
+  # Purge unneeded dependencies
+  echo "Removing unneeded dependencies."
+    for pkg in $(dpkg -l | awk '/build-deps/ { print $2 }'); do apt purge -y $pkg 2>/dev/null; done && apt autoremove --purge -y 2>/dev/null 
+}
+
+trap rdeps return
+
+delete(){
+  # Delete source and un-hold package.
+  rm -rvf /usr/portdeb/$1
+  echo " "
+  apt-mark unhold $1
+  echo "Source of $1 has been removed."
+  echo -e "You may uninstall this program with 'apt purge $1' if you choose.\n"
+}
+
+trap delete return
+
+success(){
+  #Define dir
+  PORTPATH=/usr/portdeb/$1
+
+  # Put package on hold.
+  if apt-mark hold $1 2>/dev/null; then
+    break 2>/dev/null
+  else
+    echo "Unable to put package on hold."
+    echo "Perhaps package uses a different name than "$1"." 
+    echo "Please inspect and put on hold manually."
+  fi
+
+  # Display binary path. 
+  if [ ! -z "command -v $1" ]
+  then
+    echo "$1 is now installed at $(command -v $1)."
+  else
+    echo -e "$1 was not found in \$PATH.\nManually inspect for other binary name or needed path to be set."
+  fi
+
+  # Display source path.
+  if [ -d "$PORTPATH" ]
+  then
+    echo "Source can be found in /usr/portdeb/$1."
+  else
+    echo "Source directory was NOT found as /usr/portdeb/$1." 
+    ALTPATH=$(ls /usr/portdeb | grep $1)
+    if [ ! -z "$ALTPATH" ]
+    then
+      echo "A directory called /usr/portdeb/$ALTPATH was found instead."
+      echo "Please inspect manually to confirm."
+    else 
+      echo "Perhaps this was saved under another name or errors were encountered." 
+      echo -e "Please inspect /usr/portdeb to confirm.\n" 
+    fi 
+  fi
+}
+
+trap success return
+
+# If no arguments call help
+if [ $# -eq 0 ]
+  then
+    help
+fi
+
+upgrade(){
+
+  echo -e "\nChecking for possible updates..."
+  apt update > /dev/null 2>/dev/null
+
+  declare -a ports
+
+  # Check for packages to upgrade and display versions
+  # Also add port names to array
+  for i in $(ls -1 /usr/portdeb/); 
+    do A=$(dpkg -l | awk '{ print $2, $3 }' | awk "/^$i/ { print \$2 }" | head -n 1 | cut -d+ -f1);
+       B=$(apt-cache policy $i | awk "/Candidate/ { print \$2 }" | cut -d+ -f1); 
+       if [[ ! -z "$A" &&  ! -z "$B" && "$A" != "$B" ]]; then 
+	     ports[$J]=$i; 
+	     let "J=J+1"
+	     printf "$i: $A -> $B\n"; 
+       fi;
+  done
+
+# If no updates found exit
+if [ ${#ports[@]} != 0 ]; then
+  # Confirm upgrades
+  echo " "
+  read -p "Would you like to proceed?[Y/n]" -n 1 -r
+  echo " "
+  if [[ $REPLY =~ ^[Yy]$ ]]
+  then
+    echo -e "\nHold my beer!\n"
+    for i in "${ports[@]}"
+      do A=$(dpkg -l | awk "/$i/ { print \$3 }" | head -n 1)
+        if [ ! -z "$A" ]; then
+          # Move originals to backup folders.
+          mv /usr/portdeb/$i /usr/portdeb/"$i.bak"
+	  # Remove any holds
+	  apt-mark unhold $i
+          # Recursive, but fuck it.
+	  portdeb -a $i
+        fi
+    done   
+  else
+    echo -e "Come back when you do.\n"	
+    exit
+  fi
+
+  echo -e "\nUpgrades are now complete. In the event newer versions are problematic, backups of the previous source have been moved to /usr/portdeb/program_name.bak. If you do not need these backup you may remove them with 'rm -rf /usr/portdeb/*.bak\n"
+
+else
+  echo -e "\nNo updates were found.\n"
+  exit
+fi
+
+}
+
+# Check number of arguments
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    help
+    exit 1
+fi
+
+while getopts ":hascbilurd" opt; do
+  case ${opt} in
+    h )
+        help
+      ;;
+    a )
+      # Call functions and define error handling. 
+      rootcheck
+      direxist $2
+      getsource $2
+
+      trim $2 || { echo -e "\nTrimming the source folder name to the package name you requested has failed. You will need to inspect this manually inside /usr/portdeb.\n" 1>&2 
+        false
+      }
+
+      builddeps $2 || { apt --fix-broken install -y; apt --fix-missing install -y; }
+
+      buildpkg || { apt --fix-broken install -y; apt --fix-missing install -y; }
+
+      instpkg $2 || { apt --fix-broken install -y; apt --fix-missing install -y; }
+
+      rdeps || { echo -e "\nSomething has failed while removing unneeded dependencies.\n" 1>&2
+	false
+      }
+
+      clean $2 || { echo -e "\nCleaning has failed. Perhaps ownership or permissions have changed. Or files were removed after cleaning began \_0_/ \n" 1>&2
+        false
+      }
+
+      success $2
+      ;;
+    s )
+        rootcheck
+        direxist $2
+        getsource $2
+	trim $2 || { echo -e "\nTrimming the source folder name to the package name you requested has failed. You will need to inspect this manually inside /usr/portdeb.\n" 1>&2
+	  false
+	}
+        SOURCEPATH="/usr/portdeb/$2"
+	if [ -d "$SOURCEPATH" ]; then
+	  echo -e "\nSource code for $2 is now in $SOURCEPATH\n"
+        fi
+      ;;	   
+    c )
+        clean $2 >/dev/null || { echo -e "\nCleaning has failed. Perhaps ownership or permissions have changed. Or files were removed after cleaning began \_0_/ \n" 1>&2
+          false
+      }
+        echo -e "\n\nCleaning complete.\n"
+      ;; 
+    b )
+        BUILDPATH="/usr/portdeb/$2"
+	if [ -d "$BUILDPATH" ]; then
+          builddeps $2 || { apt --fix-broken install -y; apt --fix-missing install -y; }
+          buildpkg || { apt --fix-broken install -y; apt --fix-missing install -y; }
+	else
+	  echo -e "\n$BUILDPATH was not found.\n"
+	fi
+      ;;
+    i ) 
+       INSTPATH="/usr/portdeb/"	    
+       if [ -d "$INSTPATH" ]; then  
+         cd $INSTPATH
+
+	 instpkg $2 || { apt --fix-broken install -y; apt --fix-missing install -y; }
+
+	 LOCATION=$(command -v $2)
+	 if [ ! -z $LOCATION ]; then
+	   echo -e "\n$2 is now installed at $LOCATION\n"
+         else
+           echo -e "\n$2 was not found in your \$PATH."
+	   echo -e "This could be due to a failure or an unset PATH.\n"
+	 fi
+       else
+         echo -e "\nThe folder for $2 was not found inside /usr/portdeb.\n"
+       fi
+     ;; 
+    l ) 
+       # Put package on hold.
+       if apt-mark hold $2 2>/dev/null; then
+         break 2>/dev/null
+       else
+         echo "Unable to put package on hold."
+         echo "Perhaps package uses a different name than "$2"." 
+         echo "Please inspect and put on hold manually."
+       fi
+      ;;
+
+    u )
+        upgrade 
+      ;;
+    r )
+	rdeps    
+      ;;
+    d )
+        delete $2 || { echo -e "\nDeletion of $2 has failed.\n" 1>&2
+        false
+      }
+      ;;
+    \? ) echo "Usage: portdeb [-a] [-h]"
+      ;;
+   esac
+done
