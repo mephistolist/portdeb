@@ -1,7 +1,4 @@
-Portdeb is a ports-like system for Debian. 
-It is not meant to maintain an entire system and dependencies, but the specific software you choose. 
-Portdeb works with apt to ensure apt does not overwrite its changes. 
-However, upgrading with apt will still be needed to ensure software not maintained by portdeb is up to date.  
+Portdeb is a ports-like system for Debian. It is not meant to maintain an entire system and dependencies, but the specific software you choose. Portdeb works with apt to ensure apt does not overwrite its changes. However, upgrading with apt will still be needed to ensure software not maintained by portdeb is up to date.  
 
 Install the following dependencies:
 ```
