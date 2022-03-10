@@ -24,12 +24,14 @@ help() {
       echo "portdeb -u : Check and offer upgrades for ports available"
       echo "portdeb -r : Remove unneeded dependencies from builds."
       echo -e "portdeb -c : Clean unecessary files from builds.\n"
+      cd $CWD
       exit
 }
 
 direxist(){
   if [ -d "/usr/portdeb/$1" ]; then
     echo -e "\nThe folder /usr/portdeb/$1 already exists.\nYou will need to rename, move or remove this file to proceed."
+    cd $CWD
     exit
   fi
 }
@@ -47,6 +49,7 @@ trap trim return
 rootcheck(){
   if [ "$EUID" -ne 0 ]
     then echo "You are not root/sudo/doas. Come back when you are."
+    cd $CWD
     exit
   fi
 
@@ -59,6 +62,7 @@ getsource(){
     break 2>/dev/null
   else
     echo -e "Try 'apt search $1'"
+    cd $CWD
     exit
   fi
 
@@ -81,6 +85,7 @@ builddeps(){
   else
     echo -e "\nNecessary folders/files are missing to complete this build."
     echo -e "Please try re-downloading the source and try again.\n"  
+    cd $CWD
     exit
   fi
 }
@@ -104,6 +109,7 @@ instpkg(){
      dpkg -i $PWD/$C
   else
      echo -e "\nNo package files for $1 were found to install.\n"
+     cd $CWD
      exit
   fi
 }
@@ -148,6 +154,8 @@ success(){
     echo "Unable to put package on hold."
     echo "Perhaps package uses a different name than "$1"." 
     echo "Please inspect and put on hold manually."
+    cd $CWD
+    exit
   fi
 
   # Display binary path. 
@@ -156,6 +164,8 @@ success(){
     echo "$1 is now installed at $(command -v $1)."
   else
     echo -e "$1 was not found in \$PATH.\nManually inspect for other binary name or needed path to be set."
+    cd $CWD
+    exit
   fi
 
   # Display source path.
@@ -171,7 +181,9 @@ success(){
       echo "Please inspect manually to confirm."
     else 
       echo "Perhaps this was saved under another name or errors were encountered." 
-      echo -e "Please inspect /usr/portdeb to confirm.\n" 
+      echo -e "Please inspect /usr/portdeb to confirm.\n"
+      cd $CWD
+      exit
     fi 
   fi
 }
@@ -224,7 +236,8 @@ if [ ${#ports[@]} != 0 ]; then
         fi
     done   
   else
-    echo -e "Come back when you do.\n"	
+    echo -e "Come back when you do.\n"
+    cd $CWD
     exit
   fi
 
@@ -232,6 +245,7 @@ if [ ${#ports[@]} != 0 ]; then
 
 else
   echo -e "\nNo updates were found.\n"
+  cd $CWD
   exit
 fi
 
@@ -240,6 +254,7 @@ fi
 # Check number of arguments
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
     help
+    cd $CWD
     exit 1
 fi
 
