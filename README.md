@@ -20,7 +20,7 @@ Portdeb is a ports-like system for Debian.
 
 Usage:
 
-portdeb -a program_name : Download, Build, Install, Lock and Clean (All)
+portdeb -a program_name : Download, Build, Install, Lock and Clean (All)\n
 portdeb -s program_name : Download source to /usr/portdeb
 portdeb -b program_name : Build program in /usr/portdeb/program_name
 portdeb -i program_name : Install a built program in /usr/portdeb/program_name
