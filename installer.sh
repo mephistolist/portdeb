@@ -7,6 +7,11 @@ rootcheck(){
   fi
 }
 
+if [ "$#" != "0" ]; then
+    echo -e "\nThis script requires no arguments.\n"
+    exit
+fi
+
 rootcheck
 
 if [ -d /usr/portdeb ]; then
