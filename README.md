@@ -4,20 +4,9 @@ Download with the following and change into directory:
 ```
 git clone https://github.com/mephistolist/portdeb.git && cd portdeb
 ```
-Install the following dependencies:
+Add excute permissions to the install script and run it:
 ```
-sudo apt install dpkg-dev devscripts fakeroot -y
-```
-Create the following dir and add permissions:
-```
-sudo mkdir /usr/portdeb  
-sudo chown -Rv _apt:root /usr/portdeb  
-sudo chmod -Rv 700 /usr/portdeb  
-```
-Copy script to /usr/bin and add permissions:
-```
-sudo cp portdeb /usr/bin  
-sudo chmod +x /usr/bin/portdeb
+chmod +x installer.sh && sudo ./installer.sh 
 ```
 Usage:
 ```
