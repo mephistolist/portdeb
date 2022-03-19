@@ -13,7 +13,14 @@ return(){
 }
 
 help() {
-      echo -e "Portdeb is a ports-like system for Debian.\n"	    
+      echo "__________              __      .___    ___."    
+      echo "\______   \____________/  |_  __| _/____\_ |__"  
+      echo " |     ___/  _ \_  __ \   __\/ __ |/ __ \| __ \\" 
+      echo " |    |  (  <_> )  | \/|  | / /_/ \  ___/| \_\ \\"
+      echo " |____|   \____/|__|   |__| \____ |\___  >___  /"
+      echo "                                 \/    \/    \/"
+      echo " "
+      echo -e "   Portdeb is a ports-like system for Debian.\n"	    
       echo -e "Usage:\n"
       echo "portdeb -a program_name : Download, Build, Install, Lock and Clean (All)"
       echo "portdeb -s program_name : Download source to /usr/portdeb"
