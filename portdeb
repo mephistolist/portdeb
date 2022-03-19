@@ -20,7 +20,7 @@ help() {
       echo " |____|   \____/|__|   |__| \____ |\___  >___  /"
       echo "                                 \/    \/    \/"
       echo " "
-      echo -e "   Portdeb is a ports-like system for Debian.\n"	    
+      echo -e "   Portdeb is a ports-like system for Debian\n"	    
       echo -e "Usage:\n"
       echo "portdeb -a program_name : Download, Build, Install, Lock and Clean (All)"
       echo "portdeb -s program_name : Download source to /usr/portdeb"
