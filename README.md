@@ -20,7 +20,7 @@ portdeb -u : Check and offer upgrades for ports available
 portdeb -r : Remove unneeded dependencies from builds  
 portdeb -c : Clean unecessary files from builds  
 ```
-Copyright 2022 by Jon Cox of portdeb.org under GNU GPL3 License.  
+© Copyright 2022 by Jon Cox of portdeb.org under GNU GPL3 License.  
 A copy of this license may be found here: https://www.gnu.org/licenses/gpl-3.0.en.html 
 
 See https://github.com/mephistolist/portdeb/wiki for more information, contact and trouble-shooting.
