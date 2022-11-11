@@ -25,13 +25,11 @@ fi
 if dpkg -s devscripts dpkg-dev fakeroot shc 2&>1 2>/dev/null; then
   break 2>/dev/null
 else
-  apt install dpkg-dev devscripts fakeroot shc -y
+  apt install dpkg-dev devscripts fakeroot -y
 fi
 
 chown -Rv _apt:root /usr/portdeb
 chmod -Rv 700 /usr/portdeb
-shc -f portdeb -o portdeb
 cp portdeb /usr/bin
 chmod +x /usr/bin/portdeb
-rm portdeb.x.c
 echo -e "\nInstall complete.\n"
